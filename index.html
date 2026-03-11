@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GLOWLIN — Pharmacy System</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+
+  <!-- ========== LOGIN ========== -->
+  <div id="login-screen">
+    <div id="login-box">
+      <div id="login-logo">
+        <span class="brand">GLOWLIN</span>
+        <p>Pharmacy Management System</p>
+      </div>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="login-user" placeholder="Enter username" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-pass" placeholder="Enter password" />
+      </div>
+      <p id="login-error" class="err hidden">Wrong username or password</p>
+      <button id="login-btn" onclick="doLogin()">Login</button>
+      <p class="login-hint">Default: admin / admin123</p>
+    </div>
+  </div>
+
+  <!-- ========== APP ========== -->
+  <div id="app" class="hidden">
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar">
+      <div id="sb-logo">
+        <span class="brand">GLOWLIN</span>
+        <small>Pharmacy System</small>
+      </div>
+      <nav>
+        <button class="nav-btn active" onclick="goTo('dashboard')">
+          <i class="fa fa-chart-pie"></i><span>Dashboard</span>
+        </button>
+        <button class="nav-btn" onclick="goTo('pos')">
+          <i class="fa fa-cash-register"></i><span>Sales / POS</span>
+        </button>
+        <button class="nav-btn" onclick="goTo('medicines')">
+          <i class="fa fa-pills"></i><span>Medicines</span>
+          <span id="low-badge" class="badge hidden">!</span>
+        </button>
+        <button class="nav-btn" onclick="goTo('purchases')">
+          <i class="fa fa-truck"></i><span>Purchases</span>
+        </button>
+        <button class="nav-btn" onclick="goTo('reports')">
+          <i class="fa fa-chart-bar"></i><span>Reports</span>
+        </button>
+      </nav>
+      <button id="logout-btn" onclick="doLogout()">
+        <i class="fa fa-sign-out-alt"></i> Logout
+      </button>
+    </aside>
+
+    <!-- MAIN -->
+    <main id="main">
+
+      <!-- TOPBAR -->
+      <header id="topbar">
+        <div id="topbar-left">
+          <span id="page-title">Dashboard</span>
+        </div>
+        <div id="topbar-right">
+          <span id="today-date"></span>
+          <div id="user-chip"><i class="fa fa-user-circle"></i> Admin</div>
+        </div>
+      </header>
+
+      <!-- ===== PAGE: DASHBOARD ===== -->
+      <section id="page-dashboard" class="page active">
+        <div class="stats-row">
+          <div class="stat-card teal">
+            <div class="stat-icon"><i class="fa fa-pills"></i></div>
+            <div class="stat-info">
+              <span id="s-meds">0</span>
+              <label>Total Medicines</label>
+            </div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-icon"><i class="fa fa-dollar-sign"></i></div>
+            <div class="stat-info">
+              <span id="s-today">$0</span>
+              <label>Sales Today</label>
+            </div>
+          </div>
+          <div class="stat-card gold">
+            <div class="stat-icon"><i class="fa fa-chart-line"></i></div>
+            <div class="stat-info">
+              <span id="s-profit">$0</span>
+              <label>Profit Today</label>
+            </div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-icon"><i class="fa fa-exclamation-triangle"></i></div>
+            <div class="stat-info">
+              <span id="s-low">0</span>
+              <label>Low Stock Alerts</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-grid">
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Recent Sales</h3>
+              <button class="link-btn" onclick="goTo('pos')">View All →</button>
+            </div>
+            <table class="tbl">
+              <thead><tr><th>Invoice</th><th>Items</th><th>Total</th><th>Time</th></tr></thead>
+              <tbody id="recent-sales"></tbody>
+            </table>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>⚠️ Low Stock Warnings</h3></div>
+            <div id="low-stock-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== PAGE: POS ===== -->
+      <section id="page-pos" class="page hidden">
+        <div id="pos-wrap">
+          <div id="pos-left">
+            <div class="panel" style="height:100%">
+              <h3 style="margin-bottom:14px">Search Medicine</h3>
+              <input type="text" id="pos-search" class="search-input"
+                placeholder="🔍 Type medicine name or barcode..."
+                oninput="renderPOSGrid()" />
+              <div id="pos-grid"></div>
+            </div>
+          </div>
+          <div id="pos-right">
+            <div class="panel" style="height:100%">
+              <h3 style="margin-bottom:14px">🛒 Current Bill</h3>
+              <table class="tbl" id="cart-table">
+                <thead>
+                  <tr><th>Medicine</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr>
+                </thead>
+                <tbody id="cart-body"></tbody>
+              </table>
+              <div id="bill-summary">
+                <div class="bill-row"><span>Subtotal</span><span id="b-sub">$0.00</span></div>
+                <div class="bill-row discount-row">
+                  <span>Discount ($)</span>
+                  <input type="number" id="b-discount" value="0" min="0" oninput="recalc()" />
+                </div>
+                <div class="bill-row total-row">
+                  <span>TOTAL</span><span id="b-total">$0.00</span>
+                </div>
+              </div>
+              <div class="form-group" style="margin-top:12px">
+                <label>Payment</label>
+                <select id="pay-method">
+                  <option value="cash">💵 Cash</option>
+                  <option value="card">💳 Card</option>
+                </select>
+              </div>
+              <div id="cash-section">
+                <div class="form-group">
+                  <label>Cash Given ($)</label>
+                  <input type="number" id="cash-given" value="0" min="0" oninput="calcChange()" />
+                </div>
+                <p id="change-line">Change: $0.00</p>
+              </div>
+              <div id="pos-btns">
+                <button class="btn-primary" onclick="completeSale()">✅ Complete Sale</button>
+                <button class="btn-ghost" onclick="clearCart()">🗑 Clear</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== PAGE: MEDICINES ===== -->
+      <section id="page-medicines" class="page hidden">
+        <div class="page-bar">
+          <input type="text" class="search-input" id="med-search"
+            placeholder="🔍 Search medicines..." oninput="renderMeds()" />
+          <button class="btn-primary" onclick="openMedModal()">+ Add Medicine</button>
+        </div>
+        <table class="tbl full-tbl">
+          <thead>
+            <tr>
+              <th>Name</th><th>Category</th><th>Stock</th>
+              <th>Sell Price</th><th>Cost Price</th><th>Expiry</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="meds-body"></tbody>
+        </table>
+      </section>
+
+      <!-- ===== PAGE: PURCHASES ===== -->
+      <section id="page-purchases" class="page hidden">
+        <div class="page-bar">
+          <input type="text" class="search-input" id="pur-search"
+            placeholder="🔍 Search purchases..." oninput="renderPurchases()" />
+          <button class="btn-primary" onclick="openPurModal()">+ Add Purchase</button>
+        </div>
+        <table class="tbl full-tbl">
+          <thead>
+            <tr>
+              <th>Medicine</th><th>Qty Bought</th><th>Cost Price</th>
+              <th>Total Cost</th><th>Supplier</th><th>Date</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="pur-body"></tbody>
+        </table>
+      </section>
+
+      <!-- ===== PAGE: REPORTS ===== -->
+      <section id="page-reports" class="page hidden">
+        <div class="report-filters">
+          <label>From <input type="date" id="r-from" /></label>
+          <label>To <input type="date" id="r-to" /></label>
+          <button class="btn-primary" onclick="genReport()">Generate</button>
+          <button class="btn-ghost" onclick="window.print()">🖨️ Print</button>
+        </div>
+        <div class="stats-row" id="report-cards"></div>
+        <div class="dash-grid">
+          <div class="panel">
+            <div class="panel-head"><h3>Sales in Period</h3></div>
+            <table class="tbl">
+              <thead><tr><th>Invoice</th><th>Items</th><th>Total</th><th>Date</th></tr></thead>
+              <tbody id="report-sales-body"></tbody>
+            </table>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>🏆 Top Selling Medicines</h3></div>
+            <div id="top-meds-list"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ========== MODALS (outside everything) ========== -->
+
+  <!-- Medicine Modal -->
+  <div id="med-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="med-modal-title">Add Medicine</h3>
+        <button class="x-btn" onclick="closeMedModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="med-id" />
+        <div class="form-row">
+          <div class="form-group">
+            <label>Name *</label>
+            <input type="text" id="m-name" placeholder="e.g. Paracetamol 500mg" />
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select id="m-cat">
+              <option>Analgesic</option><option>Antibiotic</option>
+              <option>Vitamin</option><option>Antifungal</option>
+              <option>Cardiac</option><option>Diabetes</option>
+              <option>Skin</option><option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Stock Qty *</label>
+            <input type="number" id="m-stock" placeholder="0" min="0" />
+          </div>
+          <div class="form-group">
+            <label>Low Stock Alert (when qty below)</label>
+            <input type="number" id="m-low" placeholder="10" value="10" min="0" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Selling Price ($) *</label>
+            <input type="number" id="m-price" placeholder="0.00" min="0" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label>Cost Price ($)</label>
+            <input type="number" id="m-cost" placeholder="0.00" min="0" step="0.01" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Expiry Date *</label>
+            <input type="date" id="m-expiry" />
+          </div>
+          <div class="form-group">
+            <label>Barcode (optional)</label>
+            <input type="text" id="m-barcode" placeholder="1234567890" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="m-notes" rows="2" placeholder="Dosage, instructions..."></textarea>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn-primary" onclick="saveMed()">💾 Save</button>
+        <button class="btn-ghost" onclick="closeMedModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Purchase Modal -->
+  <div id="pur-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Add Purchase</h3>
+        <button class="x-btn" onclick="closePurModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="pur-id" />
+        <div class="form-row">
+          <div class="form-group">
+            <label>Medicine Name *</label>
+            <input type="text" id="p-name" placeholder="e.g. Paracetamol 500mg" />
+          </div>
+          <div class="form-group">
+            <label>Supplier (optional)</label>
+            <input type="text" id="p-supplier" placeholder="Supplier name" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Quantity *</label>
+            <input type="number" id="p-qty" placeholder="0" min="1" />
+          </div>
+          <div class="form-group">
+            <label>Cost per Unit ($) *</label>
+            <input type="number" id="p-cost" placeholder="0.00" min="0" step="0.01" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="p-date" />
+        </div>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="p-add-stock" checked />
+            Also add this quantity to medicine inventory
+          </label>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn-primary" onclick="savePurchase()">💾 Save</button>
+        <button class="btn-ghost" onclick="closePurModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Receipt Modal -->
+  <div id="receipt-overlay" class="modal-overlay hidden">
+    <div id="receipt-box">
+      <div id="receipt-print-area">
+        <h2 class="brand" style="text-align:center;color:var(--teal);margin-bottom:4px">GLOWLIN</h2>
+        <p style="text-align:center;font-size:0.8rem;color:#888;margin-bottom:4px">Pharmacy Receipt</p>
+        <p id="r-date" style="text-align:center;font-size:0.82rem;color:#888"></p>
+        <p id="r-inv"  style="text-align:center;font-size:0.82rem;font-weight:600;margin-bottom:10px"></p>
+        <hr class="dashed"/>
+        <table id="r-items" style="width:100%;font-size:0.85rem;border-collapse:collapse"></table>
+        <hr class="dashed"/>
+        <div id="r-totals"></div>
+        <div id="r-pay"></div>
+        <p style="text-align:center;color:#aaa;font-size:0.78rem;margin-top:14px">Thank you! 💊</p>
+      </div>
+      <div id="receipt-actions">
+        <button class="btn-primary" onclick="window.print()">🖨️ Print</button>
+        <button class="btn-ghost" onclick="closeReceipt()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
